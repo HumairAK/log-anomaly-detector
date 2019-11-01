@@ -13,6 +13,7 @@ pytest-cov = "*"
 black = "*"
 coala = "*"
 openshift = "*"
+locustio = "*"
 
 [packages]
 "elasticsearch5" = "*"

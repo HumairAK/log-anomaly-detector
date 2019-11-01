@@ -1,12 +1,12 @@
 """Openshift Tests."""
 import logging
 import requests
-import invokust
 
 import subprocess
 from tests.e2e.conftest import Spec
 from tests.e2e.util import OpenShift, wait_for_condition, deployment_running, \
-    build_finished_successfully, container_running, check_skip_test
+    build_finished_successfully, container_running, check_skip_test, store_logs
+
 
 #
 # def test_mysql_deployment(openshift: OpenShift, mysql_persistent: list,
@@ -334,12 +334,12 @@ def test_10k_logs(openshift: OpenShift, ad_demo: list, config: dict):
         test_name=test_10k_logs.__name__
     )
     # Ensure we successfully deployed (if indicated) or retrieved template.
-    # Ensure we successfully deployed (if indicated) or retrieved template.
     assert len(ad_demo) > 0
     resources = openshift.extract_resource_from_response(
         resp=ad_demo,
         kind="Route",
     )
+    # There are two routes, we want the http (not metrics) route
     resources = list(filter(
         lambda route: not route['metadata']['name'].endswith('metrics'),
         resources
@@ -350,9 +350,9 @@ def test_10k_logs(openshift: OpenShift, ad_demo: list, config: dict):
     route_url = "http://{}".format(ocp_route['spec']['host'])
 
     locust_file = "load_test/locustfile.py"
-    locust_users = 2
-    hatch_rate = 2
-    run_time = "3s"
+    locust_users = 1000
+    hatch_rate = 1000
+    run_time = "120"
 
     locust_command = "locust -f {} --no-web -c {} -r {} --run-time {} --host={}".format(
         locust_file,
@@ -362,6 +362,9 @@ def test_10k_logs(openshift: OpenShift, ad_demo: list, config: dict):
         route_url
     )
 
-    process = subprocess.run(locust_command.split(), stdout=subprocess.PIPE)
+    process = subprocess.run(locust_command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     ret_code = process.returncode
+    stderr = process.stderr
+    store_logs(filename_prefix='logs/locust', name='logs',
+               log_fn=lambda name: stderr.decode("utf-8"))
     assert ret_code == 0
