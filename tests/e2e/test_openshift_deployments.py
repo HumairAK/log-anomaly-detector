@@ -350,9 +350,9 @@ def test_10k_logs(openshift: OpenShift, ad_demo: list, config: dict):
     route_url = "http://{}".format(ocp_route['spec']['host'])
 
     locust_file = "load_test/locustfile.py"
-    locust_users = 1000
-    hatch_rate = 1000
-    run_time = "120"
+    locust_users = 400
+    hatch_rate = 400
+    run_time = "240"
 
     locust_command = "locust -f {} --no-web -c {} -r {} --run-time {} --host={}".format(
         locust_file,
